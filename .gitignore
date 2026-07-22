@@ -1,0 +1,10 @@
+.venv/
+venv/
+__pycache__/
+instance/
+*.db
+uploads/
+.DS_Store
+celerybeat-schedule.db
+*.pyc
+.env
