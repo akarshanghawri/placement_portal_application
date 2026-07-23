@@ -16,19 +16,22 @@ def admin_required():
 # stats
 @admin_bp.route('/stats', methods=['GET'])
 @jwt_required()
-@cache.cached(timeout=300, key_prefix='admin_stats')
 def stats():
     err = admin_required()
     if err: 
         return err
-    else : 
-        return jsonify({
-            'total_students': Student.query.count(),
-            'total_companies': Company.query.count(),
-            'total_drives': PlacementDrive.query.count(),
-            'pending_companies': Company.query.filter_by(approval_status='pending').count(),
-            'pending_drives': PlacementDrive.query.filter_by(status='pending').count(),
-        })
+    
+    cached = cache.get('admin_stats')
+    if cached:
+        return cached
+    
+    return jsonify({
+        'total_students': Student.query.count(),
+        'total_companies': Company.query.count(),
+        'total_drives': PlacementDrive.query.count(),
+        'pending_companies': Company.query.filter_by(approval_status='pending').count(),
+        'pending_drives': PlacementDrive.query.filter_by(status='pending').count(),
+    })
 
 #all companies
 @admin_bp.route('/companies', methods=['GET'])
@@ -40,6 +43,11 @@ def get_companies():
     
     search = request.args.get('search', '')
     query = Company.query
+
+    cached = cache.get('admin_stats')
+    if cached:
+        return cached
+    
     if search:
         query = query.filter(Company.name.ilike(f'%{search}%'))
     companies = query.all()
@@ -127,12 +135,16 @@ def update_student_status(student_id):
 # Get all drives
 @admin_bp.route('/drives', methods=['GET'])
 @jwt_required()
-@cache.cached(timeout=120,key_prefix='admin_drives')
 def get_drives():
     err = admin_required()
     if err: 
         return err
     drives = PlacementDrive.query.all()
+
+    cached = cache.get('admin_stats')
+    if cached:
+        return cached
+    
     return jsonify([{
         'id': d.id,
         'drive_name': d.drive_name,

@@ -8,3 +8,4 @@ uploads/
 celerybeat-schedule.db
 *.pyc
 .env
+.pytest_cache/

@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///placement.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///placement.db')
 
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     CELERY_BROKER_URL = "redis://localhost:6379/0"
