@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+      - ./instance:/app/instance
+
+  worker:
+    build: .
+    command: celery -A celery_worker.celery worker --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - web
+    volumes:
+      - ./uploads:/app/uploads
+      - ./instance:/app/instance
+
+  beat:
+    build: .
+    command: celery -A celery_worker.celery beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - web

@@ -9,3 +9,4 @@ celerybeat-schedule.db
 *.pyc
 .env
 .pytest_cache/
+echo ".dockerignore" >> .gitignore

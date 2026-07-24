@@ -9,13 +9,13 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///placement.db')
 
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
-    CELERY_BROKER_URL = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND = "redis://localhost:6379/1"
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+    CELERY_RESULT_BACKEND =  os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
     CELERY_TIMEZONE = 'Asia/Kolkata'
     CELERY_ENABLE_UTC = False
     
     CACHE_TYPE = 'RedisCache'
-    CACHE_REDIS_URL = "redis://localhost:6379/2"
+    CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/2')
 
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
