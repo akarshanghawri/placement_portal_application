@@ -15,25 +15,14 @@ services:
         sync: false
       - key: ADMIN_EMAIL
         sync: false
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: placement-portal-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: placement-portal-redis
-          property: connectionString
-      - key: CACHE_REDIS_URL
-        fromService:
-          type: redis
-          name: placement-portal-redis
-          property: connectionString
       - key: DATABASE_URL
-        fromDatabase:
-          name: placement-portal-db
-          property: connectionString
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        sync: false
+      - key: CACHE_REDIS_URL
+        sync: false
 
   - type: worker
     name: placement-portal-worker
@@ -42,42 +31,20 @@ services:
     startCommand: celery -A celery_worker.celery worker --loglevel=info
     envVars:
       - key: SECRET_KEY
-        fromService:
-          type: web
-          name: placement-portal-web
-          envVarKey: SECRET_KEY
+        sync: false
       - key: JWT_SECRET_KEY
-        fromService:
-          type: web
-          name: placement-portal-web
-          envVarKey: JWT_SECRET_KEY
+        sync: false
       - key: MAIL_USERNAME
         sync: false
       - key: MAIL_PASSWORD
         sync: false
       - key: ADMIN_EMAIL
         sync: false
-      - key: CELERY_BROKER_URL
-        fromService:
-          type: redis
-          name: placement-portal-redis
-          property: connectionString
-      - key: CELERY_RESULT_BACKEND
-        fromService:
-          type: redis
-          name: placement-portal-redis
-          property: connectionString
       - key: DATABASE_URL
-        fromDatabase:
-          name: placement-portal-db
-          property: connectionString
-
-  - type: redis
-    name: placement-portal-redis
-    plan: free
-    ipAllowList: []
-
-databases:
-  - name: placement-portal-db
-    databaseName: placement_portal
-    plan: free
+        sync: false
+      - key: CELERY_BROKER_URL
+        sync: false
+      - key: CELERY_RESULT_BACKEND
+        sync: false
+      - key: CACHE_REDIS_URL
+        sync: false
