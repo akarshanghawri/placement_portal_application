@@ -75,6 +75,7 @@ services:
   - type: redis
     name: placement-portal-redis
     plan: free
+    ipAllowList: []
 
 databases:
   - name: placement-portal-db
