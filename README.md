@@ -2,6 +2,8 @@
 
 A full-stack web application for managing campus recruitment — built with Flask, Vue.js, Celery, and Redis.
 
+🔗 **Live Demo:** [placement-portal on Render](https://placement-portal-application-9nn7.onrender.com)
+
 ---
 
 ## Overview
@@ -18,11 +20,10 @@ This Placement Portal solves that with three distinct roles — **Admin**, **Com
 |-------|-----------|
 | Backend | Flask (REST API) |
 | Frontend | Vue.js 3 (CDN) + Bootstrap 5 |
-| Database | SQLite + SQLAlchemy ORM |
+| Database | PostgreSQL (Supabase) |
 | Authentication | JWT (Flask-JWT-Extended) |
 | Background Jobs | Celery + Celery Beat |
-| Message Broker | Redis |
-| Caching | Flask-Caching (Redis) |
+| Message Broker / Cache | Redis (Upstash) |
 | Email | Flask-Mail (Gmail SMTP) |
 | File Uploads | Werkzeug |
 
@@ -59,6 +60,16 @@ This Placement Portal solves that with three distinct roles — **Admin**, **Com
 | Daily Reminder | Every day at 10am | Emails students about upcoming deadlines |
 | Monthly Report | 1st of every month | Emails admin an HTML activity report |
 | CSV Export | User triggered | Emails student their application history |
+
+---
+
+## Demo Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | contact owner | admin123 |
+| Company | register via app | your choice |
+| Student | register via app | your choice |
 
 ---
 
@@ -161,7 +172,7 @@ placement_portal_application/
 
 ---
 
-## Setup and Installation
+## Local Setup and Installation
 
 ### Prerequisites
 - Python 3.10+
@@ -233,8 +244,31 @@ Visit `http://localhost:5000`
 ## Default Admin Credentials
 
 ```
-Email:    your_admin_email (set in .env)
+Email:    admin123@mail.com
 Password: admin123
 ```
 
 Admin is seeded programmatically on first run. No admin registration is allowed.
+
+---
+
+## Deployment
+
+The application is deployed on **Render** with the following infrastructure:
+
+| Service | Provider | Notes |
+|---------|----------|-------|
+| Web app | Render (free tier) | Spins down after inactivity |
+| PostgreSQL | Supabase (free) | Persistent, always on |
+| Redis | Upstash (free) | Caching and task queue |
+
+### Note on Background Jobs
+
+The Celery worker and beat scheduler are not deployed on the live server due to Render's free tier limitations (750 hours/month shared across services). Background jobs (daily reminders, monthly report, CSV export) can be run locally and will connect to the same Supabase and Upstash instances as the live app:
+
+```bash
+# Make sure .env has the Supabase and Upstash URLs
+celery -A celery_worker.celery worker --loglevel=info
+celery -A celery_worker.celery beat --loglevel=info
+```
+
