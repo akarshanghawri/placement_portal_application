@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from celery import Celery
@@ -21,6 +21,15 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
+
+    @app.route('/debug-env')
+    def debug_env():
+        import os
+        return jsonify({
+            'CACHE_REDIS_URL': os.environ.get('CACHE_REDIS_URL', 'NOT SET'),
+            'CELERY_BROKER_URL': os.environ.get('CELERY_BROKER_URL', 'NOT SET'),
+            'DATABASE_URL': os.environ.get('DATABASE_URL', 'NOT SET'),
+        })
 
     cache.init_app(app, config={
         'CACHE_TYPE': 'RedisCache',
