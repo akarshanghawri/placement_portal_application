@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from celery.schedules import crontab
+from sqlalchemy.pool import NullPool
 
 load_dotenv(override=False)
 
@@ -45,4 +46,9 @@ class Config:
             'task': 'app.jobs.tasks.send_monthly_report',
             'schedule': crontab(day_of_month=1, hour=0, minute=0),
         },
+    }
+
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'poolclass': NullPool,
     }
