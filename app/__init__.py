@@ -22,19 +22,15 @@ def create_app():
     jwt.init_app(app)
     mail.init_app(app)
 
-    @app.route('/debug-env')
-    def debug_env():
-        import os
-        return jsonify({
-            'CACHE_REDIS_URL': os.environ.get('CACHE_REDIS_URL', 'NOT SET'),
-            'CELERY_BROKER_URL': os.environ.get('CELERY_BROKER_URL', 'NOT SET'),
-            'DATABASE_URL': os.environ.get('DATABASE_URL', 'NOT SET'),
-        })
-
     cache.init_app(app, config={
         'CACHE_TYPE': 'RedisCache',
-        'CACHE_REDIS_URL': 'redis://localhost:6379/2',
-        'CACHE_DEFAULT_TIMEOUT': 300   # 300 seconds 
+        'CACHE_REDIS_URL': app.config['CACHE_REDIS_URL'], 
+        'CACHE_DEFAULT_TIMEOUT': 300,
+        'CACHE_OPTIONS': {
+            'ssl_cert_reqs': None,
+            'socket_connect_timeout': 5,
+            'socket_timeout': 5,
+        }
     })
 
     celery.conf.update(
