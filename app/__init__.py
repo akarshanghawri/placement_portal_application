@@ -38,10 +38,6 @@ def create_app():
         'pool_recycle': 300,         # recycle connections every 5 minutes
         'pool_size': 5,
         'max_overflow': 2,
-        'connect_args': {
-            'sslmode': 'require',
-            'connect_timeout': 10,
-        }
     }
 
     celery.conf.update(
