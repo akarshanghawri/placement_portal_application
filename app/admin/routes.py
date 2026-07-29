@@ -21,9 +21,9 @@ def stats():
     if err: 
         return err
 
-    cached = cache.get('admin_stats')
-    if cached:
-        return cached
+    # cached = cache.get('admin_stats')
+    # if cached:
+    #     return cached
 
     response = jsonify({
         'total_students': Student.query.count(),
@@ -32,7 +32,7 @@ def stats():
         'pending_companies': Company.query.filter_by(approval_status='pending').count(),
         'pending_drives': PlacementDrive.query.filter_by(status='pending').count(),
     })
-    cache.set('admin_stats', response, timeout=300)
+    # cache.set('admin_stats', response, timeout=300)
     return response
 
 # all companies
