@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from celery.schedules import crontab
 
-load_dotenv()
+load_dotenv(override=False)
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
