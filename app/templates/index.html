@@ -7,10 +7,15 @@
 </head>
 <body>
 
-<div id="app">
-    <!-- Vue mounts here -->
-    [[ currentView ]]
-</div>
+<div id="app"></div>
+
+<script
+    async
+    crossorigin="anonymous"
+    data-clerk-publishable-key="{{ clerk_publishable_key }}"
+    src="{{ clerk_frontend_api }}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+    type="text/javascript"
+></script>
 
 <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
 <script src="/static/js/app.js"></script>

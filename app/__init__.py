@@ -20,7 +20,6 @@ def create_app():
 
     db.init_app(app)
     jwt.init_app(app)
-
     mail.init_app(app)
 
     cache.init_app(app, config={
@@ -53,26 +52,34 @@ def create_app():
     with app.app_context():
         db.create_all()
         seed_admin()   # creates admin if not exists
+
+    # print("SQLALCHEMY_DATABASE_URI =", app.config["SQLALCHEMY_DATABASE_URI"])
     
     @app.route('/')
     def index():
-        return render_template('index.html')
+        return render_template('index.html',
+            clerk_publishable_key=os.environ.get('CLERK_PUBLISHABLE_KEY'),
+            clerk_frontend_api=os.environ.get('CLERK_FRONTEND_API')
+        )
 
     return app
-
 
 def seed_admin():
     from .models import User
     from werkzeug.security import generate_password_hash
-    
+    import os
+
     admin = User.query.filter_by(role='admin').first()
     if not admin:
         admin = User(
+            clerk_id='admin',   # placeholder bcz admin doesn't use Clerk
             username='admin',
-            email='24f2004832@ds.study.iitm.ac.in',
+            email=os.environ.get('ADMIN_EMAIL'),
             password=generate_password_hash('admin123'),
             role='admin'
         )
         db.session.add(admin)
         db.session.commit()
+
+
 

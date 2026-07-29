@@ -1,30 +1,17 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask import Blueprint, request, jsonify, g
 from datetime import datetime
 from .. import db
 from ..models import *
-import json 
+from ..clerk_auth import clerk_required, company_required
 
 company_bp = Blueprint('company', __name__)
 
-def get_company():
-    identity = json.loads(get_jwt_identity())
-    if identity['role'] != 'company':
-        return None, jsonify({'message': 'Company access required'}), 403
-    
-    company = Company.query.filter_by(user_id=identity['id']).first()
-    if not company:
-        return None, jsonify({'message': 'Company profile not found'}), 404
-    
-    return company, None, None
-
 # Stats
 @company_bp.route('/dashboard', methods=['GET'])
-@jwt_required()
+@clerk_required
+@company_required
 def dashboard():
-    company, err, code = get_company()
-    if err: 
-        return err, code
+    company = g.company
     
     drives = PlacementDrive.query.filter_by(company_id=company.id).all()
 
@@ -53,11 +40,10 @@ def dashboard():
 
 # Create drive
 @company_bp.route('/drives', methods=['POST'])
-@jwt_required()
+@clerk_required
+@company_required
 def create_drive():
-    company, err, code = get_company()
-    if err:
-        return err, code
+    company = g.company
     
     if company.approval_status != 'approved':
         return jsonify({'message': 'Your company is not approved yet'}), 403
@@ -82,11 +68,10 @@ def create_drive():
 
 # Get applications for a drive
 @company_bp.route('/drives/<int:drive_id>/applications', methods=['GET'])
-@jwt_required()
+@clerk_required
+@company_required
 def drive_applications(drive_id):
-    company, err, code = get_company()
-    if err: 
-        return err, code
+    company = g.company
     
     drive = PlacementDrive.query.get(drive_id)
 
@@ -113,18 +98,14 @@ def drive_applications(drive_id):
 
 # Update application status
 @company_bp.route('/applications/<int:app_id>/status', methods=['PUT'])
-@jwt_required()
+@clerk_required
+@company_required
 def update_application(app_id):
-    company, err, code = get_company()
+    company = g.company
 
-    if err: 
-        return err, code
-    
     application = Application.query.get(app_id)
     status = request.get_json().get('status')
     application.status = status
     db.session.commit()
-
-
 
     return jsonify({'message': f'Application {status}'})

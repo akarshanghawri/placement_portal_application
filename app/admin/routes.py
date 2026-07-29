@@ -20,40 +20,42 @@ def stats():
     err = admin_required()
     if err: 
         return err
-    
+
     cached = cache.get('admin_stats')
     if cached:
         return cached
-    
-    return jsonify({
+
+    response = jsonify({
         'total_students': Student.query.count(),
         'total_companies': Company.query.count(),
         'total_drives': PlacementDrive.query.count(),
         'pending_companies': Company.query.filter_by(approval_status='pending').count(),
         'pending_drives': PlacementDrive.query.filter_by(status='pending').count(),
     })
+    cache.set('admin_stats', response, timeout=300)
+    return response
 
-#all companies
+# all companies
 @admin_bp.route('/companies', methods=['GET'])
 @jwt_required()
 def get_companies():
     err = admin_required()
     if err: 
         return err
-    
-    search = request.args.get('search', '')
-    query = Company.query
 
-    cached = cache.get('admin_stats')
-    if cached:
-        return cached
-    
+    search = request.args.get('search', '')
+
+    if not search:
+        cached = cache.get('admin_companies')
+        if cached:
+            return cached
+
+    query = Company.query
     if search:
         query = query.filter(Company.name.ilike(f'%{search}%'))
     companies = query.all()
 
-    result =[]
-    
+    result = []
     for c in companies:
         result.append({
             'id': c.id,
@@ -63,8 +65,11 @@ def get_companies():
             'approval_status': c.approval_status,
             'user_id': c.user_id
         })
-    
-    return jsonify(result)
+
+    response = jsonify(result)
+    if not search:
+        cache.set('admin_companies', response, timeout=300)
+    return response
 
 # Approve/reject/blacklist company
 @admin_bp.route('/companies/<int:company_id>/status', methods=['PUT'])
@@ -73,19 +78,16 @@ def update_company_status(company_id):
     err = admin_required()
     if err: 
         return err
-    
+
     company = Company.query.get(company_id)
-    status = request.get_json().get('status') 
+    status = request.get_json().get('status')
     company.approval_status = status
 
     if status == 'blacklisted':
         user = User.query.get(company.user_id)
         user.is_active = False
-
-        # cancel all drives
         PlacementDrive.query.filter_by(company_id=company.id).update({'status': 'closed'})
 
-    # Clearing cache so that the old data is removed from the cache when the status is updated
     cache.delete('admin_stats')
     cache.delete('admin_companies')
     cache.delete('admin_drives')
@@ -93,13 +95,14 @@ def update_company_status(company_id):
     db.session.commit()
     return jsonify({'message': f'Company {status}'})
 
+# all students
 @admin_bp.route('/students', methods=['GET'])
 @jwt_required()
 def get_students():
     err = admin_required()
     if err: 
         return err
-    
+
     search = request.args.get('search', '')
     query = Student.query
     if search:
@@ -125,6 +128,7 @@ def update_student_status(student_id):
     err = admin_required()
     if err: 
         return err
+
     student = Student.query.get(student_id)
     is_active = request.get_json().get('is_active')
     user = User.query.get(student.user_id)
@@ -132,20 +136,20 @@ def update_student_status(student_id):
     db.session.commit()
     return jsonify({'message': 'Student status updated'})
 
-# Get all drives
+# all drives
 @admin_bp.route('/drives', methods=['GET'])
 @jwt_required()
 def get_drives():
     err = admin_required()
     if err: 
         return err
-    drives = PlacementDrive.query.all()
 
-    cached = cache.get('admin_stats')
+    cached = cache.get('admin_drives')
     if cached:
         return cached
-    
-    return jsonify([{
+
+    drives = PlacementDrive.query.all()
+    response = jsonify([{
         'id': d.id,
         'drive_name': d.drive_name,
         'job_title': d.job_title,
@@ -154,6 +158,9 @@ def get_drives():
         'deadline': d.application_deadline.strftime('%Y-%m-%d') if d.application_deadline else None
     } for d in drives])
 
+    cache.set('admin_drives', response, timeout=300)
+    return response
+
 # Approve/reject drive
 @admin_bp.route('/drives/<int:drive_id>/status', methods=['PUT'])
 @jwt_required()
@@ -161,6 +168,7 @@ def update_drive_status(drive_id):
     err = admin_required()
     if err: 
         return err
+
     drive = PlacementDrive.query.get(drive_id)
     status = request.get_json().get('status')
     drive.status = status
@@ -171,19 +179,17 @@ def update_drive_status(drive_id):
 
     return jsonify({'message': f'Drive {status}'})
 
-# Get all applications
+# all applications
 @admin_bp.route('/applications', methods=['GET'])
 @jwt_required()
 def get_applications():
     err = admin_required()
-    if err: 
+    if err:
         return err
-    
+
     apps = Application.query.all()
-
     result = []
-
-    for a in apps :
+    for a in apps:
         result.append({
             'id': a.id,
             'student': a.student.full_name,
@@ -192,17 +198,4 @@ def get_applications():
             'status': a.status,
             'applied_at': a.applied_at.strftime('%Y-%m-%d')
         })
-
     return jsonify(result)
-
-
-# testing caching - 
-
-# import time
-# from datetime import datetime
-# @admin_bp.route('/cache-test', methods=['GET'])
-# @jwt_required()
-# @cache.cached(timeout=30, key_prefix='cache_test')
-# def cache_test():
-#     time.sleep(2)  # simulate slow DB query
-#     return jsonify({'message': 'done', 'time': str(datetime.utcnow())})

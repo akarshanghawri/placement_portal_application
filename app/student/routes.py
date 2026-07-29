@@ -1,34 +1,19 @@
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
+from flask import Blueprint, request, jsonify,g
 from .. import db, cache
 from ..models import *
-import json 
 from ..jobs.tasks import export_applications_csv
 from werkzeug.utils import secure_filename
 import os 
-from flask import current_app
+from ..clerk_auth import clerk_required, student_required
 
 student_bp = Blueprint('student', __name__)
 
-def get_student():
-    identity = json.loads(get_jwt_identity())
-    if identity['role'] != 'student':
-        return None, jsonify({'message': 'Student access required'}), 403
-    
-    student = Student.query.filter_by(user_id=identity['id']).first()
-    if not student:
-        return None, jsonify({'message': 'Student profile not found'}), 404
-    
-    return student, None, None
-
 # Student dashboard
 @student_bp.route('/drives', methods=['GET'])
-@jwt_required()
+@clerk_required
+@student_required
 def get_drives():
-    student, err, code = get_student()
-    if err: 
-        return err, code
+    student = g.student 
     search = request.args.get('search', '')
     query = PlacementDrive.query.filter_by(status='approved')
 
@@ -64,11 +49,10 @@ def get_drives():
 
 # Apply for drive
 @student_bp.route('/drives/<int:drive_id>/apply', methods=['POST'])
-@jwt_required()
+@clerk_required
+@student_required
 def apply(drive_id):
-    student, err, code = get_student()
-    if err: 
-        return err, code
+    student = g.student 
     drive = PlacementDrive.query.get(drive_id)
 
 
@@ -94,11 +78,10 @@ def apply(drive_id):
     return jsonify({'message': 'Applied successfully'}), 201
 
 @student_bp.route('/applications', methods=['GET'])
-@jwt_required()
+@clerk_required
+@student_required
 def my_applications():
-    student, err, code = get_student()
-    if err: 
-        return err, code
+    student = g.student 
     
     apps = Application.query.filter_by(student_id=student.id).all()
 
@@ -119,11 +102,10 @@ def my_applications():
     return jsonify(result)
 
 @student_bp.route('/profile', methods=['PUT'])
-@jwt_required()
+@clerk_required
+@student_required
 def edit_profile():
-    student, err, code = get_student()
-    if err: 
-        return err, code
+    student = g.student 
     data = request.get_json()
 
     student.full_name = data.get('full_name', student.full_name)
@@ -137,11 +119,10 @@ def edit_profile():
 
 # Get profile
 @student_bp.route('/profile', methods=['GET'])
-@jwt_required()
+@clerk_required
+@student_required
 def get_profile():
-    student, err, code = get_student()
-    if err: 
-        return err, code
+    student = g.student 
     
     return jsonify({
         'full_name': student.full_name,
@@ -154,11 +135,10 @@ def get_profile():
     })
 
 @student_bp.route('/export', methods=['POST'])
-@jwt_required()
+@clerk_required
+@student_required
 def export_csv():
-    student, err, code = get_student()
-    if err: 
-        return err, code
+    student = g.student 
     export_applications_csv.delay(student.id)  # .delay() triggers async
 
     return jsonify({'message': 'You will receive an email shortly.'})
@@ -167,11 +147,10 @@ def allowed_file(filename):
     return filename.endswith(('.pdf', '.doc', '.docx'))         # allowed files 
 
 @student_bp.route('/upload-resume', methods=['POST'])
-@jwt_required()
+@clerk_required
+@student_required
 def upload_resume():
-    student, err, code = get_student()
-    if err: 
-        return err, code
+    student = g.student 
 
     if 'resume' not in request.files:
         return jsonify({'message': 'No file uploaded'}), 400
@@ -193,6 +172,8 @@ def upload_resume():
 
 
 @student_bp.route('/resume/<filename>', methods=['GET'])
+@clerk_required
+@student_required
 def view_resume(filename):
     from flask import send_from_directory
     return send_from_directory(
