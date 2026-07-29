@@ -22,6 +22,9 @@ class Config:
     
     CACHE_TYPE = 'RedisCache'
     CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/2')
+    CACHE_OPTIONS = {
+        'ssl_cert_reqs': None
+    }
 
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
