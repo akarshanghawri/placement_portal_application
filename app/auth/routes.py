@@ -40,6 +40,16 @@ def setup_admin():
 
 @auth_bp.route('/admin/login', methods=['POST'])
 def admin_login():
+    from sqlalchemy import text
+    from .. import db
+
+    # forces fresh connection 
+    try:
+        db.session.execute(text('SELECT 1'))
+    except:
+        db.session.rollback()
+        db.session.remove()
+    
     data = request.get_json()
     user = User.query.filter_by(email=data['email'], role='admin').first()
 

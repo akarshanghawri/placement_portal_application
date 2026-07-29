@@ -35,9 +35,10 @@ def create_app():
 
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,       
-        'pool_recycle': 300,         # recycle connections every 5 minutes
-        'pool_size': 5,
-        'max_overflow': 2,
+        'pool_recycle': 60,         # recycle connections every 5 minutes
+        'pool_size': 3,
+        'max_overflow': 1,
+        'pool_timout': 30,
     }
 
     celery.conf.update(
