@@ -33,6 +33,17 @@ def create_app():
         }
     })
 
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,       
+        'pool_recycle': 300,         # recycle connections every 5 minutes
+        'pool_size': 5,
+        'max_overflow': 2,
+        'connect_args': {
+            'sslmode': 'require',
+            'connect_timeout': 10,
+        }
+    }
+
     celery.conf.update(
         broker_url=app.config['CELERY_BROKER_URL'],
         result_backend=app.config['CELERY_RESULT_BACKEND']
