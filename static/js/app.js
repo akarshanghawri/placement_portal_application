@@ -416,7 +416,13 @@ async function initApp() {
                     <input v-model="registerForm.full_name" placeholder="Full Name" class="form-control mb-2">
                     <input v-model="registerForm.branch" placeholder="Branch (e.g. CSE)" class="form-control mb-2">
                     <input v-model="registerForm.cgpa" placeholder="CGPA" type="number" step="0.1" class="form-control mb-2">
-                    <input v-model="registerForm.year" placeholder="Year" type="number" class="form-control mb-2">
+                    <select v-model="registerForm.year" class="form-select mb-2">
+                        <option value="">Select Year</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                    </select>
                     <input v-model="registerForm.phone" placeholder="Phone" class="form-control mb-3">
                 </template>
                 <template v-else>
@@ -624,7 +630,13 @@ async function initApp() {
                     <div class="col-md-4 mb-2"><input v-model="driveForm.application_deadline" type="date" class="form-control"></div>
                     <div class="col-md-4 mb-2"><input v-model="driveForm.required_branch" placeholder="Branch (Any / CSE,ECE)" class="form-control"></div>
                     <div class="col-md-4 mb-2"><input v-model="driveForm.required_cgpa" placeholder="Min CGPA" type="number" step="0.1" class="form-control"></div>
-                    <div class="col-md-4 mb-2"><input v-model="driveForm.required_year" placeholder="Year" type="number" class="form-control"></div>
+                    <div class="col-md-4 mb-2"><select v-model="driveForm.required_year" class="form-select">
+                    <option value="">Any Year</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select></div>
                 </div>
                 <button @click="createDrive" class="btn btn-success mt-2">Submit Drive</button>
             </div>

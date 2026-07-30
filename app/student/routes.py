@@ -172,8 +172,6 @@ def upload_resume():
 
 
 @student_bp.route('/resume/<filename>', methods=['GET'])
-@clerk_required
-@student_required
 def view_resume(filename):
     from flask import send_from_directory
     return send_from_directory(
