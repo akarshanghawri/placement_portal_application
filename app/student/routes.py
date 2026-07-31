@@ -5,6 +5,7 @@ from ..jobs.tasks import export_applications_csv
 from werkzeug.utils import secure_filename
 import os 
 from ..clerk_auth import clerk_required, student_required
+from datetime import datetime
 
 student_bp = Blueprint('student', __name__)
 
@@ -68,6 +69,8 @@ def apply(drive_id):
 
         if student.branch not in allowed:
             return jsonify({'message': 'Your branch is not eligible'}), 403
+    if drive.application_deadline and datetime.utcnow() > drive.application_deadline:
+        return jsonify({'message': 'Application deadline has passed'}), 400
 
     app = Application(student_id=student.id, drive_id=drive_id)
     db.session.add(app)

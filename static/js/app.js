@@ -143,9 +143,11 @@ async function initApp() {
                 const { ok, data } = await api('POST', endpoint, payload)
                 if (!ok) {
                     error.value = data.message
+                    autoClear()
                     return
                 }
                 success.value = data.message
+                autoClear()
                 await checkAuth()
             }
             
@@ -171,7 +173,11 @@ async function initApp() {
                     body: JSON.stringify(adminLoginForm.value)
                 })
                 const data = await res.json()
-                if (!res.ok) { error.value = data.message; return }
+                if (!res.ok) { 
+                    error.value = data.message
+                    autoClear()
+                    return 
+                }
                 
                 localStorage.setItem('admin_token', data.token)
                 page.value = 'admin'
@@ -237,8 +243,9 @@ async function initApp() {
 
             async function createDrive() {
                 const { ok, data } = await api('POST', '/api/company/drives', driveForm.value)
-                if (!ok) { error.value = data.message; return }
+                if (!ok) { error.value = data.message; autoClear(); return }
                 success.value = data.message
+                autoClear()
                 showDriveForm.value = false
                 loadCompanyData()
             }
@@ -267,8 +274,9 @@ async function initApp() {
 
             async function applyDrive(driveId) {
                 const { ok, data } = await api('POST', `/api/student/drives/${driveId}/apply`)
-                if (!ok) { error.value = data.message; return }
+                if (!ok) { error.value = data.message; autoClear(); return }
                 success.value = data.message
+                autoClear()
                 loadStudentData()
             }
 
@@ -284,8 +292,9 @@ async function initApp() {
 
             async function saveProfile() {
                 const { ok, data } = await api('PUT', '/api/student/profile', profileForm.value)
-                if (!ok) { error.value = data.message; return }
+                if (!ok) { error.value = data.message; autoClear(); return }
                 success.value = data.message
+                autoClear()
                 editingProfile.value = false
                 loadStudentData()
             }
@@ -304,9 +313,11 @@ async function initApp() {
                 const data = await res.json()
                 if (res.ok) {
                     success.value = data.message
+                    autoClear()
                     loadStudentData()
                 } else {
                     error.value = data.message
+                    autoClear()
                 }
             }
 
@@ -322,7 +333,17 @@ async function initApp() {
 
             async function exportCSV() {
                 const { ok, data } = await api('POST', '/api/student/export')
-                if (ok) success.value = data.message
+                if (ok) {
+                    success.value = data.message
+                    autoClear()
+                }
+            }
+
+            function autoClear() {          //auto dismiss error msg 
+                setTimeout(() => {
+                    error.value = ''
+                    success.value = ''
+                }, 4000)
             }
 
             // ─── Init ───
@@ -350,7 +371,7 @@ async function initApp() {
                 searchCompanies, searchStudents,
                 createDrive, loadDriveApplications, updateAppStatus,
                 applyDrive, searchDrives, saveProfile,
-                uploadResume, viewResume, exportCSV, adminLogin
+                uploadResume, viewResume, exportCSV, adminLogin, autoClear,
             }
         },
 
@@ -414,8 +435,23 @@ async function initApp() {
 
                 <template v-if="registerForm.registerAs === 'student'">
                     <input v-model="registerForm.full_name" placeholder="Full Name" class="form-control mb-2">
-                    <input v-model="registerForm.branch" placeholder="Branch (e.g. CSE)" class="form-control mb-2">
-                    <input v-model="registerForm.cgpa" placeholder="CGPA" type="number" step="0.1" class="form-control mb-2">
+                    <select v-model="registerForm.branch" class="form-select mb-2">
+                        <option value="">Select Branch</option>
+                        <option value="CSE">CSE</option>
+                        <option value="ECE">ECE</option>
+                        <option value="ME">ME</option>
+                        <option value="CE">CE</option>
+                        <option value="EE">EE</option>
+                        <option value="IT">IT</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="mb-2">
+                        <label class="form-label d-flex justify-content-between mb-1 small text-muted">
+                            <span>CGPA:</span>
+                            <strong class="text-primary">[[ registerForm.cgpa || '0.0' ]]</strong>
+                        </label>
+                        <input v-model="registerForm.cgpa" type="range" min="0.0" max="10.0" step="0.1" class="form-range">
+                    </div>
                     <select v-model="registerForm.year" class="form-select mb-2">
                         <option value="">Select Year</option>
                         <option value="1">1st Year</option>
@@ -627,9 +663,30 @@ async function initApp() {
                     <div class="col-12 mb-2"><textarea v-model="driveForm.job_description" placeholder="Job Description" class="form-control"></textarea></div>
                     <div class="col-md-4 mb-2"><input v-model="driveForm.salary" placeholder="Salary" class="form-control"></div>
                     <div class="col-md-4 mb-2"><input v-model="driveForm.location" placeholder="Location" class="form-control"></div>
-                    <div class="col-md-4 mb-2"><input v-model="driveForm.application_deadline" type="date" class="form-control"></div>
-                    <div class="col-md-4 mb-2"><input v-model="driveForm.required_branch" placeholder="Branch (Any / CSE,ECE)" class="form-control"></div>
-                    <div class="col-md-4 mb-2"><input v-model="driveForm.required_cgpa" placeholder="Min CGPA" type="number" step="0.1" class="form-control"></div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label small text-muted mb-1">Application Deadline</label>
+                        <input v-model="driveForm.application_deadline" type="date" class="form-control shadow-sm border-primary-subtle">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label small text-muted mb-1">Required Branch</label>
+                        <select v-model="driveForm.required_branch" class="form-select">
+                            <option value="Any">Any Branch</option>
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="ME">ME</option>
+                            <option value="CE">CE</option>
+                            <option value="EE">EE</option>
+                            <option value="IT">IT</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label d-flex justify-content-between mb-1 small text-muted">
+                            <span>Min CGPA:</span>
+                            <strong class="text-primary">[[ driveForm.required_cgpa || '0.0' ]]</strong>
+                        </label>
+                        <input v-model="driveForm.required_cgpa" type="range" min="0.0" max="10.0" step="0.1" class="form-range">
+                    </div>
                     <div class="col-md-4 mb-2"><select v-model="driveForm.required_year" class="form-select">
                     <option value="">Any Year</option>
                     <option value="1">1st Year</option>
@@ -791,8 +848,26 @@ async function initApp() {
                 </div>
                 <div v-else>
                     <input v-model="profileForm.full_name" placeholder="Full Name" class="form-control mb-2">
-                    <input v-model="profileForm.branch" placeholder="Branch" class="form-control mb-2">
-                    <input v-model="profileForm.cgpa" placeholder="CGPA" type="number" step="0.1" class="form-control mb-2">
+                    <div class="mb-2">
+                        <label class="form-label small text-muted mb-1">Branch</label>
+                        <select v-model="profileForm.branch" class="form-select">
+                            <option value="">Select Branch</option>
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="ME">ME</option>
+                            <option value="CE">CE</option>
+                            <option value="EE">EE</option>
+                            <option value="IT">IT</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label d-flex justify-content-between mb-1 small text-muted">
+                            <span>CGPA:</span>
+                            <strong class="text-primary">[[ profileForm.cgpa || '0.0' ]]</strong>
+                        </label>
+                        <input v-model="profileForm.cgpa" type="range" min="0.0" max="10.0" step="0.1" class="form-range">
+                    </div>
                     <input v-model="profileForm.year" placeholder="Year" type="number" class="form-control mb-2">
                     <input v-model="profileForm.phone" placeholder="Phone" class="form-control mb-3">
                     <button @click="saveProfile" class="btn btn-success me-2">Save</button>
