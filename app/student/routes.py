@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify,g
+from flask import Blueprint, request, jsonify,g, current_app
 from .. import db, cache
 from ..models import *
 from ..jobs.tasks import export_applications_csv
@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 import os 
 from ..clerk_auth import clerk_required, student_required
 from datetime import datetime
+from supabase import create_client
 
 student_bp = Blueprint('student', __name__)
 
@@ -146,14 +147,19 @@ def export_csv():
 
     return jsonify({'message': 'You will receive an email shortly.'})
 
+def get_supabase():
+    url = current_app.config['SUPABASE_URL']
+    key = current_app.config['SUPABASE_SERVICE_KEY']
+    return create_client(url, key)
+
 def allowed_file(filename):
-    return filename.endswith(('.pdf', '.doc', '.docx'))         # allowed files 
+    return filename.endswith(('.pdf', '.doc', '.docx')) 
 
 @student_bp.route('/upload-resume', methods=['POST'])
 @clerk_required
 @student_required
 def upload_resume():
-    student = g.student 
+    student = g.student
 
     if 'resume' not in request.files:
         return jsonify({'message': 'No file uploaded'}), 400
@@ -164,20 +170,31 @@ def upload_resume():
         return jsonify({'message': 'Only PDF, DOC, DOCX allowed'}), 400
 
     filename = secure_filename(f"student_{student.id}_{file.filename}")
-    upload_folder = os.path.join(os.getcwd(), 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
-    file.save(os.path.join(upload_folder, filename))
+    file_bytes = file.read()
 
+    supabase = get_supabase()
+    
+    # Deletes old resume if exists
+    if student.resume_path:
+        supabase.storage.from_('resumes').remove([student.resume_path])
+
+    # Upload new resume
+    supabase.storage.from_('resumes').upload(
+        path=filename,
+        file=file_bytes,
+        file_options={'content-type': file.content_type}
+    )
+
+    # Stores filename in DB
     student.resume_path = filename
     db.session.commit()
 
     return jsonify({'message': 'Resume uploaded', 'filename': filename})
 
-
 @student_bp.route('/resume/<filename>', methods=['GET'])
 def view_resume(filename):
-    from flask import send_from_directory
-    return send_from_directory(
-        os.path.join(os.getcwd(), 'uploads'),
-        filename
-    )
+    supabase = get_supabase()
+    # Generates public URL
+    url = supabase.storage.from_('resumes').get_public_url(filename)
+    from flask import redirect
+    return redirect(url)

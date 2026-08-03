@@ -322,13 +322,7 @@ async function initApp() {
             }
 
             async function viewResume(filename) {
-                const token = await getToken()
-                const res = await fetch(`/api/student/resume/${filename}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const blob = await res.blob()
-                const url = URL.createObjectURL(blob)
-                window.open(url, '_blank')
+                window.open(`/api/student/resume/${filename}`, '_blank')
             }
 
             async function exportCSV() {
