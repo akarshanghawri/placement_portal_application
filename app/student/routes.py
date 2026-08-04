@@ -8,6 +8,11 @@ from ..clerk_auth import clerk_required, student_required
 from datetime import datetime
 from supabase import create_client
 
+from groq import Groq
+import PyPDF2
+import io
+import requests as http_requests
+
 student_bp = Blueprint('student', __name__)
 
 # Student dashboard
@@ -198,3 +203,76 @@ def view_resume(filename):
     url = supabase.storage.from_('resumes').get_public_url(filename)
     from flask import redirect
     return redirect(url)
+
+@student_bp.route('/check-resume/<int:drive_id>', methods=['GET'])
+@clerk_required
+@student_required
+def check_resume(drive_id):
+    student = g.student
+    
+    if not student.resume_path:
+        return jsonify({'message': 'No resume uploaded'}), 400
+
+    drive = PlacementDrive.query.get_or_404(drive_id)
+
+    # Fetch resume from Supabase Storage
+    supabase = get_supabase()
+    url = supabase.storage.from_('resumes').get_public_url(student.resume_path)
+    
+    response = http_requests.get(url)
+    if response.status_code != 200:
+        return jsonify({'message': 'Could not fetch resume'}), 500
+
+    # Extract text from PDF
+    try:
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(response.content))
+        resume_text = ""
+        for page in pdf_reader.pages:
+            resume_text += page.extract_text() or ""
+    except Exception as e:
+        return jsonify({'message': f'Could not read resume: {str(e)}'}), 500
+
+    if not resume_text.strip():
+        return jsonify({'message': 'Could not extract text from resume. Make sure it is not a scanned image.'}), 400
+
+    # job context
+    job_context = f"""
+    Job Title: {drive.job_title}
+    Job Description: {drive.job_description or 'Not provided'}
+    Required Branch: {drive.required_branch or 'Any'}
+    Required CGPA: {drive.required_cgpa or 'Not specified'}
+    Company: {drive.company.name}
+    """
+
+    # Groq
+    client = Groq(api_key=current_app.config['GROQ_API_KEY'])
+    
+    prompt = f"""
+    You are an ATS (Applicant Tracking System) expert. Analyze this resume against the job description and provide a structured evaluation.
+
+    JOB DETAILS:
+    {job_context}
+
+    RESUME:
+    {resume_text[:3000]}
+
+    Provide your response in this exact JSON format:
+    {{
+        "match_score": <number 0-100>,
+        "summary": "<2-3 sentence overall assessment>",
+        "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
+        "gaps": ["<gap 1>", "<gap 2>", "<gap 3>"],
+        "suggestions": ["<suggestion 1>", "<suggestion 2>", "<suggestion 3>"]
+    }}
+
+    Return only valid JSON, no other text.
+    """
+
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama-3.1-8b-instant",
+    )
+
+    import json
+    result = json.loads(chat_completion.choices[0].message.content)
+    return jsonify(result)

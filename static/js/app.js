@@ -22,7 +22,7 @@ async function initApp() {
             const adminSearchStudent = ref('')
             const adminLoginForm = ref({ email: '', password: '' })
 
-            
+
             // ─── Company State ───
             const companyDashboard = ref({})
             const companyApplications = ref([])
@@ -33,7 +33,7 @@ async function initApp() {
                 required_cgpa: 0, required_year: '', application_deadline: ''
             })
             const showDriveForm = ref(false)
-            
+
             // ─── Student State ───
             const studentDrives = ref([])
             const studentApplications = ref([])
@@ -42,7 +42,10 @@ async function initApp() {
             const studentView = ref('drives')
             const editingProfile = ref(false)
             const profileForm = ref({})
-            
+            const atsResult = ref(null)
+            const atsLoading = ref(false)
+            const atsDriveId = ref(null)
+
             // ─── Register Form ───
             const registerForm = ref({
                 username: '', full_name: '', branch: '',
@@ -50,12 +53,12 @@ async function initApp() {
                 company_name: '', hr_contact: '', website: '', description: '',
                 registerAs: 'student'
             })
-            
+
             // ─── Helpers ───
             async function getToken() {
                 return await window.Clerk.session.getToken()
             }
-            
+
             async function api(method, url, body = null) {
                 const token = await getToken()
                 const opts = {
@@ -66,11 +69,11 @@ async function initApp() {
                     }
                 }
                 if (body) opts.body = JSON.stringify(body)
-                    const res = await fetch(url, opts)
+                const res = await fetch(url, opts)
                 const data = await res.json()
                 return { ok: res.ok, data, status: res.status }
             }
-            
+
             // ─── Auth ───
             async function checkAuth() {
                 // Check admin token first
@@ -102,14 +105,14 @@ async function initApp() {
                     loadStudentData()
                 }
             }
-            
+
             function showClerkLogin() {
                 window.Clerk.openSignIn({
                     afterSignInUrl: window.location.href,
                     afterSignUpUrl: window.location.href,
                 })
             }
-            
+
             async function logout() {
                 const adminToken = localStorage.getItem('admin_token')
                 if (adminToken) {
@@ -124,22 +127,22 @@ async function initApp() {
                 selectedDriveId.value = null
                 companyApplications.value = []
             }
-            
+
             async function register() {
                 error.value = ''
                 const clerkUser = window.Clerk.user
                 const email = clerkUser.primaryEmailAddress?.emailAddress
-                
+
                 const endpoint = registerForm.value.registerAs === 'student'
-                ? '/api/auth/register/student'
-                : '/api/auth/register/company'
-                
+                    ? '/api/auth/register/student'
+                    : '/api/auth/register/company'
+
                 const payload = {
                     email,
                     username: registerForm.value.username || clerkUser.username || email.split('@')[0],
                     ...registerForm.value
                 }
-                
+
                 const { ok, data } = await api('POST', endpoint, payload)
                 if (!ok) {
                     error.value = data.message
@@ -150,7 +153,7 @@ async function initApp() {
                 autoClear()
                 await checkAuth()
             }
-            
+
             // ─── Admin ───
             async function loadAdminData() {
                 const { data: stats } = await adminApiCall('GET', '/api/admin/stats')
@@ -173,12 +176,12 @@ async function initApp() {
                     body: JSON.stringify(adminLoginForm.value)
                 })
                 const data = await res.json()
-                if (!res.ok) { 
+                if (!res.ok) {
                     error.value = data.message
                     autoClear()
-                    return 
+                    return
                 }
-                
+
                 localStorage.setItem('admin_token', data.token)
                 page.value = 'admin'
                 loadAdminData()
@@ -198,7 +201,7 @@ async function initApp() {
                 const data = await res.json()
                 return { ok: res.ok, data }
             }
-            
+
             async function updateCompanyStatus(id, status) {
                 const { ok } = await adminApiCall('PUT', `/api/admin/companies/${id}/status`, { status })
                 if (ok) loadAdminData()
@@ -325,6 +328,16 @@ async function initApp() {
                 window.open(`/api/student/resume/${filename}`, '_blank')
             }
 
+            async function checkResume(driveId) {
+                atsResult.value = null
+                atsLoading.value = true
+                atsDriveId.value = driveId
+                const { ok, data } = await api('GET', `/api/student/check-resume/${driveId}`)
+                atsLoading.value = false
+                if (!ok) { error.value = data.message; autoClear(); return }
+                atsResult.value = data
+            }
+
             async function exportCSV() {
                 const { ok, data } = await api('POST', '/api/student/export')
                 if (ok) {
@@ -359,13 +372,13 @@ async function initApp() {
                 driveForm, showDriveForm,
                 studentDrives, studentApplications, studentProfile,
                 studentSearch, studentView, editingProfile, profileForm,
-                registerForm,adminLoginForm,
+                registerForm, adminLoginForm,atsResult, atsLoading, atsDriveId,
                 showClerkLogin, logout, register,
                 updateCompanyStatus, updateDriveStatus, toggleStudent,
                 searchCompanies, searchStudents,
                 createDrive, loadDriveApplications, updateAppStatus,
                 applyDrive, searchDrives, saveProfile,
-                uploadResume, viewResume, exportCSV, adminLogin, autoClear,
+                uploadResume, viewResume, exportCSV, adminLogin, autoClear, checkResume,
             }
         },
 
@@ -785,10 +798,74 @@ async function initApp() {
                                 <button v-if="d.is_placed" class="btn btn-warning btn-sm w-100" disabled>Already Placed</button>
                                 <button v-else-if="d.already_applied" class="btn btn-secondary btn-sm w-100" disabled>Already Applied</button>
                                 <button v-else @click="applyDrive(d.id)" class="btn btn-primary btn-sm w-100">Apply</button>
+                                <button v-if="studentProfile.resume_path" 
+                                        @click="checkResume(d.id)" 
+                                        class="btn btn-outline-info btn-sm w-100">
+                                    Check Resume Match
+                                </button>
                             </div>
                         </div>
                     </div>
                     <div v-if="studentDrives.length === 0" class="col-12 text-center text-muted">No approved drives available</div>
+                </div>
+
+                <!-- ATS Result -->
+                <div v-if="atsLoading" class="text-center mt-3">
+                    <div class="spinner-border text-info"></div>
+                    <p class="mt-2">Analyzing your resume...</p>
+                </div>
+
+                <div v-if="atsResult" class="card mt-4 border-info">
+                    <div class="card-header bg-info text-white d-flex justify-content-between">
+                        <strong>Resume Match Analysis</strong>
+                        <button @click="atsResult=null" class="btn btn-sm btn-light">✕</button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Score -->
+                        <div class="text-center mb-4">
+                            <h1 :class="{
+                                'text-success': atsResult.match_score >= 70,
+                                'text-warning': atsResult.match_score >= 40 && atsResult.match_score < 70,
+                                'text-danger': atsResult.match_score < 40
+                            }">
+                                [[ atsResult.match_score ]]%
+                            </h1>
+                            <p class="text-muted">Match Score</p>
+                            <p>[[ atsResult.summary ]]</p>
+                        </div>
+
+                        <div class="row">
+                            <!-- Strengths -->
+                            <div class="col-md-4">
+                                <h6 class="text-success">✓ Strengths</h6>
+                                <ul class="list-unstyled">
+                                    <li v-for="s in atsResult.strengths" :key="s" class="mb-1">
+                                        <span class="text-success">•</span> [[ s ]]
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Gaps -->
+                            <div class="col-md-4">
+                                <h6 class="text-danger">✗ Gaps</h6>
+                                <ul class="list-unstyled">
+                                    <li v-for="g in atsResult.gaps" :key="g" class="mb-1">
+                                        <span class="text-danger">•</span> [[ g ]]
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Suggestions -->
+                            <div class="col-md-4">
+                                <h6 class="text-primary">→ Suggestions</h6>
+                                <ul class="list-unstyled">
+                                    <li v-for="s in atsResult.suggestions" :key="s" class="mb-1">
+                                        <span class="text-primary">•</span> [[ s ]]
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

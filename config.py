@@ -11,11 +11,13 @@ class Config:
     CLERK_FRONTEND_API = os.environ.get('CLERK_FRONTEND_API')
     CLERK_SECRET_KEY = os.environ.get('CLERK_SECRET_KEY')
 
+    GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+
     DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///placement.db')
     if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
         DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
     SQLALCHEMY_DATABASE_URI = DATABASE_URL
-    
+
     SUPABASE_URL = os.environ.get('SUPABASE_URL')
     SUPABASE_SERVICE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
 
