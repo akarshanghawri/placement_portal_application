@@ -379,7 +379,7 @@ async function initApp() {
                 driveForm, showDriveForm,
                 studentDrives, studentApplications, studentProfile,
                 studentSearch, studentView, editingProfile, profileForm,
-                registerForm, adminLoginForm,atsResult, atsLoading, atsDriveId,
+                registerForm, adminLoginForm, atsResult, atsLoading, atsDriveId, recommendations, loadRecommendations,
                 showClerkLogin, logout, register,
                 updateCompanyStatus, updateDriveStatus, toggleStudent,
                 searchCompanies, searchStudents,
