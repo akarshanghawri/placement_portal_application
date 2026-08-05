@@ -276,3 +276,58 @@ def check_resume(drive_id):
     import json
     result = json.loads(chat_completion.choices[0].message.content)
     return jsonify(result)
+
+@student_bp.route('/recommendations', methods=['GET'])
+@clerk_required
+@student_required
+def get_recommendations():
+    student = g.student
+    drives = PlacementDrive.query.filter_by(status='approved').all()
+    
+    if not drives:
+        return jsonify({'recommendations': [], 'message': 'No drives available'})
+
+    student_profile = f"""
+    Branch: {student.branch}
+    CGPA: {student.cgpa}
+    Year: {student.year}
+    """
+
+    drives_list = "\n".join([
+        f"Drive ID {d.id}: {d.job_title} at {d.company.name} | Branch: {d.required_branch} | Min CGPA: {d.required_cgpa} | Year: {d.required_year}"
+        for d in drives
+    ])
+
+    client = Groq(api_key=current_app.config['GROQ_API_KEY'])
+
+    prompt = f"""
+    You are a placement advisor. Based on the student profile, recommend the most suitable drives.
+
+    STUDENT PROFILE:
+    {student_profile}
+
+    AVAILABLE DRIVES:
+    {drives_list}
+
+    Respond in this exact JSON format:
+    {{
+        "recommendations": [
+            {{
+                "drive_id": <id>,
+                "reason": "<one line why this drive suits the student>"
+            }}
+        ],
+        "advice": "<one general piece of advice for this student>"
+    }}
+
+    Return only valid JSON, no other text. Recommend maximum 3 drives.
+    """
+
+    chat_completion = client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama-3.1-8b-instant",
+    )
+
+    import json
+    result = json.loads(chat_completion.choices[0].message.content)
+    return jsonify(result)

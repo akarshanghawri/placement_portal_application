@@ -199,3 +199,4 @@ def get_applications():
             'applied_at': a.applied_at.strftime('%Y-%m-%d')
         })
     return jsonify(result)
+

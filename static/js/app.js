@@ -45,6 +45,7 @@ async function initApp() {
             const atsResult = ref(null)
             const atsLoading = ref(false)
             const atsDriveId = ref(null)
+            const recommendations = ref(null)
 
             // ─── Register Form ───
             const registerForm = ref({
@@ -265,6 +266,11 @@ async function initApp() {
             }
 
             // ─── Student ───
+            async function loadRecommendations() {
+                const { ok, data } = await api('GET', '/api/student/recommendations')
+                if (ok) recommendations.value = data
+            }
+
             async function loadStudentData() {
                 const { data: drv } = await api('GET', '/api/student/drives')
                 studentDrives.value = drv
@@ -273,6 +279,7 @@ async function initApp() {
                 const { data: prof } = await api('GET', '/api/student/profile')
                 studentProfile.value = prof
                 profileForm.value = { ...prof }
+                loadRecommendations()
             }
 
             async function applyDrive(driveId) {
@@ -775,6 +782,33 @@ async function initApp() {
 
             <div v-if="error" class="alert alert-danger">[[ error ]]</div>
             <div v-if="success" class="alert alert-success">[[ success ]]</div>
+
+            <!-- AI Recommendations -->
+            <div v-if="recommendations && recommendations.recommendations.length > 0" 
+                class="card mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <strong> AI Recommended for You</strong>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">[[ recommendations.advice ]]</p>
+                    <div class="row">
+                        <div class="col-md-4 mb-2" 
+                            v-for="rec in recommendations.recommendations" 
+                            :key="rec.drive_id">
+                            <div class="card border-warning h-100">
+                                <div class="card-body">
+                                    <p class="mb-1">
+                                        <strong>
+                                            [[ studentDrives.find(d => d.id === rec.drive_id)?.drive_name || 'Drive #' + rec.drive_id ]]
+                                        </strong>
+                                    </p>
+                                    <p class="text-muted small mb-0">[[ rec.reason ]]</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div v-if="studentView === 'drives'">
                 <div class="input-group mb-3" style="max-width:400px">
