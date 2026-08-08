@@ -265,6 +265,25 @@ async function initApp() {
                 loadDriveApplications(selectedDriveId.value)
             }
 
+            async function downloadOfferLetter(appId) {
+                const token = await getToken()
+                const res = await fetch(`/api/company/applications/${appId}/offer-letter`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                if (!res.ok) {
+                    error.value = 'Could not generate offer letter'
+                    autoClear()
+                    return
+                }
+                const blob = await res.blob()
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `offer_letter.pdf`
+                a.click()
+                URL.revokeObjectURL(url)
+            }
+
             // ─── Student ───
             async function loadRecommendations() {
                 const { ok, data } = await api('GET', '/api/student/recommendations')
@@ -385,7 +404,7 @@ async function initApp() {
                 searchCompanies, searchStudents,
                 createDrive, loadDriveApplications, updateAppStatus,
                 applyDrive, searchDrives, saveProfile,
-                uploadResume, viewResume, exportCSV, adminLogin, autoClear, checkResume,
+                uploadResume, viewResume, exportCSV, adminLogin, autoClear, checkResume,downloadOfferLetter
             }
         },
 
@@ -757,6 +776,11 @@ async function initApp() {
                                         <option value="selected" :selected="a.status === 'selected'">Selected</option>
                                         <option value="rejected" :selected="a.status === 'rejected'">Rejected</option>
                                     </select>
+                                    <button v-if="a.status === 'selected'"
+                                        @click="downloadOfferLetter(a.id)"
+                                        class="btn btn-success btn-sm mt-1 w-100">
+                                        Download Offer Letter
+                                    </button>
                                 </td>
                             </tr>
                             <tr v-if="companyApplications.length === 0">
