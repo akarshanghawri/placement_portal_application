@@ -418,19 +418,24 @@ async function initApp() {
         </div>
 
         <!-- LOGIN -->
-        <div v-else-if="page === 'login'" class="container mt-5" style="max-width:420px">
-            <h3 class="text-center mb-4">Placement Portal</h3>
-            <div class="card p-4 shadow-sm text-center">
-                <p class="text-muted mb-4">Sign in to continue</p>
-                <button @click="showClerkLogin" class="btn btn-primary w-100 mb-2">
-                    Login / Register
-                </button>
+        <div v-else-if="page === 'login'" 
+             class="d-flex align-items-center justify-content-center" 
+             style="min-height:100vh; background:#f8f9fa;">
+            <div style="width:100%; max-width:420px; padding:20px">
+                <h3 class="text-center mb-2 fw-bold">Placement Portal</h3>
+                <p class="text-center text-muted mb-4">Campus recruitment made simple</p>
+                <div class="card shadow p-4 text-center">
+                    <p class="text-muted mb-4">Sign in to continue</p>
+                    <button @click="showClerkLogin" class="btn btn-primary w-100 mb-2">
+                        Login / Register
+                    </button>
+                </div>
+                <p class="text-center mt-3 mb-0">
+                    <a href="#" @click="page='adminlogin'" class="text-muted" style="font-size:0.8rem">
+                        Admin Login
+                    </a>
+                </p>
             </div>
-            <p class="text-center mt-3 mb-0">
-                <a href="#" @click="page='adminlogin'" class="text-muted" style="font-size:0.8rem">
-                    Admin Login
-                </a>
-            </p>
         </div>
         <div v-else-if="page === 'adminlogin'" class="container mt-5" style="max-width:420px">
         <h3 class="text-center mb-4">Admin Login</h3>
@@ -511,10 +516,10 @@ async function initApp() {
 
         <!-- ADMIN DASHBOARD -->
         <div v-else-if="page === 'admin'" class="container-fluid p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3>Admin Dashboard</h3>
-                <button @click="logout" class="btn btn-outline-secondary btn-sm">Logout</button>
-            </div>
+            <nav class="navbar navbar-dark bg-primary px-4 mb-4">
+                <span class="navbar-brand fw-bold">Admin Dashboard</span>
+                <button @click="logout" class="btn btn-outline-light btn-sm">Logout</button>
+            </nav>
 
             <div class="row mb-4">
                 <div class="col-md-3">
@@ -565,11 +570,12 @@ async function initApp() {
                                 <td>[[ c.hr_contact ]]</td>
                                 <td>
                                     <span :class="{
-                                        'badge bg-warning': c.approval_status === 'pending',
+                                        'badge bg-warning text-dark': c.approval_status === 'pending',
                                         'badge bg-success': c.approval_status === 'approved',
                                         'badge bg-danger': c.approval_status === 'rejected' || c.approval_status === 'blacklisted'
                                     }">[[ c.approval_status ]]</span>
                                 </td>
+
                                 <td>
                                     <button v-if="c.approval_status === 'pending'" @click="updateCompanyStatus(c.id, 'approved')" class="btn btn-success btn-sm me-1">Approve</button>
                                     <button v-if="c.approval_status === 'pending'" @click="updateCompanyStatus(c.id, 'rejected')" class="btn btn-danger btn-sm me-1">Reject</button>
@@ -595,8 +601,9 @@ async function initApp() {
                                 <td>[[ d.deadline || 'N/A' ]]</td>
                                 <td>
                                     <span :class="{
-                                        'badge bg-warning': d.status === 'pending',
+                                        'badge bg-warning text-dark': d.status === 'pending',
                                         'badge bg-success': d.status === 'approved',
+                                        'badge bg-danger': d.status === 'rejected',
                                         'badge bg-secondary': d.status === 'closed'
                                     }">[[ d.status ]]</span>
                                 </td>
@@ -657,10 +664,10 @@ async function initApp() {
 
         <!-- COMPANY DASHBOARD -->
         <div v-else-if="page === 'company'" class="container-fluid p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3>Company Dashboard</h3>
-                <button @click="logout" class="btn btn-outline-secondary btn-sm">Logout</button>
-            </div>
+            <nav class="navbar navbar-dark bg-success px-4 mb-4">
+                <span class="navbar-brand fw-bold">Company Dashboard</span>
+                <button @click="logout" class="btn btn-outline-light btn-sm">Logout</button>
+            </nav>
 
             <div class="card mb-4 p-3" v-if="companyDashboard.company">
                 <div class="d-flex justify-content-between align-items-center">
@@ -714,11 +721,12 @@ async function initApp() {
                         </select>
                     </div>
                     <div class="col-md-4 mb-2">
-                        <label class="form-label d-flex justify-content-between mb-1 small text-muted">
-                            <span>Min CGPA:</span>
-                            <strong class="text-primary">[[ driveForm.required_cgpa || '0.0' ]]</strong>
-                        </label>
-                        <input v-model="driveForm.required_cgpa" type="range" min="0.0" max="10.0" step="0.1" class="form-range">
+                        <label class="form-label small text-muted mb-1">Min CGPA</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="range" v-model="driveForm.required_cgpa" 
+                                   min="0" max="10" step="0.1" class="form-range flex-grow-1">
+                            <span class="badge bg-primary">[[ driveForm.required_cgpa ]]</span>
+                        </div>
                     </div>
                     <div class="col-md-4 mb-2"><select v-model="driveForm.required_year" class="form-select">
                     <option value="">Any Year</option>
@@ -742,7 +750,14 @@ async function initApp() {
                                 <td>[[ d.job_title ]]</td>
                                 <td>[[ d.applicant_count ]]</td>
                                 <td>[[ d.deadline || 'N/A' ]]</td>
-                                <td><span class="badge bg-secondary">[[ d.status ]]</span></td>
+                                <td>
+                                    <span :class="{
+                                        'badge bg-warning text-dark': d.status === 'pending',
+                                        'badge bg-success': d.status === 'approved',
+                                        'badge bg-danger': d.status === 'rejected',
+                                        'badge bg-secondary': d.status === 'closed'
+                                    }">[[ d.status ]]</span>
+                                </td>
                                 <td><button @click="loadDriveApplications(d.id)" class="btn btn-info btn-sm text-white">View Applications</button></td>
                             </tr>
                             <tr v-if="!companyDashboard.drives || companyDashboard.drives.length === 0">
@@ -794,15 +809,15 @@ async function initApp() {
 
         <!-- STUDENT DASHBOARD -->
         <div v-else-if="page === 'student'" class="container-fluid p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3>Welcome, [[ studentProfile.full_name || 'Student' ]]</h3>
+            <nav class="navbar navbar-dark bg-info px-4 mb-4">
+                <span class="navbar-brand fw-bold">Welcome, [[ studentProfile.full_name ]]</span>
                 <div>
-                    <button @click="studentView='drives'" class="btn btn-sm btn-outline-primary me-1">Drives</button>
-                    <button @click="studentView='applications'" class="btn btn-sm btn-outline-primary me-1">My Applications</button>
-                    <button @click="studentView='profile'" class="btn btn-sm btn-outline-secondary me-1">Profile</button>
-                    <button @click="logout" class="btn btn-sm btn-outline-danger">Logout</button>
+                    <button @click="studentView='drives'" class="btn btn-outline-light btn-sm me-1">Drives</button>
+                    <button @click="studentView='applications'" class="btn btn-outline-light btn-sm me-1">Applications</button>
+                    <button @click="studentView='profile'" class="btn btn-outline-light btn-sm me-1">Profile</button>
+                    <button @click="logout" class="btn btn-light btn-sm">Logout</button>
                 </div>
-            </div>
+            </nav>
 
             <div v-if="error" class="alert alert-danger">[[ error ]]</div>
             <div v-if="success" class="alert alert-success">[[ success ]]</div>
@@ -821,10 +836,13 @@ async function initApp() {
                             :key="rec.drive_id">
                             <div class="card border-warning h-100">
                                 <div class="card-body">
-                                    <p class="mb-1">
+                                   <p class="mb-1">
                                         <strong>
-                                            [[ studentDrives.find(d => d.id === rec.drive_id)?.drive_name || 'Drive #' + rec.drive_id ]]
+                                            [[ studentDrives.find(d => d.id === rec.drive_id)?.drive_name || 'Loading...' ]]
                                         </strong>
+                                        <span class="text-muted small ms-1">
+                                            — [[ studentDrives.find(d => d.id === rec.drive_id)?.company ]]
+                                        </span>
                                     </p>
                                     <p class="text-muted small mb-0">[[ rec.reason ]]</p>
                                 </div>
