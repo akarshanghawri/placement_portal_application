@@ -424,7 +424,7 @@ async function initApp() {
             <div style="width:100%; max-width:420px; padding:20px">
                 <h3 class="text-center mb-2 fw-bold">Placement Portal</h3>
                 <p class="text-center text-muted mb-4">Campus recruitment made simple</p>
-                <div class="card shadow p-4 text-center">
+                <div class="card shadow-sm p-5 text-center">
                     <p class="text-muted mb-4">Sign in to continue</p>
                     <button @click="showClerkLogin" class="btn btn-primary w-100 mb-2">
                         Login / Register
@@ -822,44 +822,45 @@ async function initApp() {
             <div v-if="error" class="alert alert-danger">[[ error ]]</div>
             <div v-if="success" class="alert alert-success">[[ success ]]</div>
 
-            <!-- AI Recommendations -->
-            <div v-if="recommendations && recommendations.recommendations.length > 0" 
-                class="card mb-4 border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <strong> AI Recommended for You</strong>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted mb-3">[[ recommendations.advice ]]</p>
-                    <div class="row">
-                        <div class="col-md-4 mb-2" 
-                            v-for="rec in recommendations.recommendations" 
-                            :key="rec.drive_id">
-                            <div class="card border-warning h-100">
-                                <div class="card-body">
-                                   <p class="mb-1">
-                                        <strong>
-                                            [[ studentDrives.find(d => d.id === rec.drive_id)?.drive_name || 'Loading...' ]]
-                                        </strong>
-                                        <span class="text-muted small ms-1">
-                                            — [[ studentDrives.find(d => d.id === rec.drive_id)?.company ]]
-                                        </span>
-                                    </p>
-                                    <p class="text-muted small mb-0">[[ rec.reason ]]</p>
+            <div v-if="studentView === 'drives'">
+
+                <!-- AI Recommendations -->
+                <div v-if="recommendations && recommendations.recommendations.length > 0" 
+                    class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <strong> AI Recommended for You</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">[[ recommendations.advice ]]</p>
+                        <div class="row">
+                            <div class="col-md-4 mb-2" 
+                                v-for="rec in recommendations.recommendations" 
+                                :key="rec.drive_id">
+                                <div class="card border-warning h-100">
+                                    <div class="card-body">
+                                    <p class="mb-1">
+                                            <strong>
+                                                [[ studentDrives.find(d => d.id === rec.drive_id)?.drive_name || 'Loading...' ]]
+                                            </strong>
+                                            <span class="text-muted small ms-1">
+                                                — [[ studentDrives.find(d => d.id === rec.drive_id)?.company ]]
+                                            </span>
+                                        </p>
+                                        <p class="text-muted small mb-0">[[ rec.reason ]]</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div v-if="studentView === 'drives'">
                 <div class="input-group mb-3" style="max-width:400px">
                     <input v-model="studentSearch" class="form-control" placeholder="Search drives...">
                     <button @click="searchDrives" class="btn btn-outline-primary">Search</button>
                 </div>
                 <div class="row">
                     <div class="col-md-4 mb-3" v-for="d in studentDrives" :key="d.id">
-                        <div class="card h-100 shadow-sm">
+                        <div class="card h-100 shadow-sm border-0">
                             <div class="card-body">
                                 <h5 class="card-title">[[ d.drive_name ]]</h5>
                                 <h6 class="text-muted">[[ d.company ]]</h6>
