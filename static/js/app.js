@@ -298,7 +298,7 @@ async function initApp() {
                 const { data: prof } = await api('GET', '/api/student/profile')
                 studentProfile.value = prof
                 profileForm.value = { ...prof }
-                loadRecommendations()
+                await loadRecommendations()
             }
 
             async function applyDrive(driveId) {
