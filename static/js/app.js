@@ -418,25 +418,47 @@ async function initApp() {
         </div>
 
         <!-- LOGIN -->
-        <div v-else-if="page === 'login'" 
-             class="d-flex align-items-center justify-content-center" 
-             style="min-height:100vh; background:#f8f9fa;">
-            <div style="width:100%; max-width:420px; padding:20px">
-                <h3 class="text-center mb-2 fw-bold">Placement Portal</h3>
-                <p class="text-center text-muted mb-4">Campus recruitment made simple</p>
-                <div class="card shadow-sm p-5 text-center">
-                    <p class="text-muted mb-4">Sign in to continue</p>
-                    <button @click="showClerkLogin" class="btn btn-primary w-100 mb-2">
-                        Login / Register
-                    </button>
+        <div v-else-if="page === 'login'"
+            class="d-flex align-items-center justify-content-center"
+            style="min-height:100vh; background:#f8f9fa;">
+            <div class="row w-100 justify-content-center" style="max-width:800px; padding:20px">
+                
+                <!-- Left side -->
+                <div class="col-md-5 d-flex flex-column justify-content-center pe-5 mb-4 mb-md-0">
+                    <h2 class="fw-bold mb-2">Placement Portal</h2>
+                    <p class="text-muted mb-4">Campus recruitment made simple</p>
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2">Students</span>
+                        <small class="text-muted">Browse and apply for drives</small>
+                    </div>
+                    <div class="mb-3">
+                        <span class="badge bg-success me-2">Companies</span>
+                        <small class="text-muted">Post drives and recruit talent</small>
+                    </div>
+                    <div class="mb-3">
+                        <span class="badge bg-warning text-dark me-2">Admin</span>
+                        <small class="text-muted">Manage the entire portal</small>
+                    </div>
                 </div>
-                <p class="text-center mt-3 mb-0">
-                    <a href="#" @click="page='adminlogin'" class="text-muted" style="font-size:0.8rem">
-                        Admin Login
-                    </a>
-                </p>
+
+                <!-- Right side -->
+                <div class="col-md-5">
+                    <div class="card shadow p-4">
+                        <div v-if="error" class="alert alert-danger">[[ error ]]</div>
+                        <h5 class="fw-bold mb-1">Sign in to continue</h5>
+                        <p class="text-muted small mb-4">Use your Google or GitHub account</p>
+                        <button @click="showClerkLogin" class="btn btn-primary w-100 mb-3">
+                            Login / Register
+                        </button>
+                        <hr class="my-2">
+                        <p class="text-center mb-0" style="font-size:0.8rem">
+                            <a href="#" @click="page='adminlogin'" class="text-muted">Admin Login</a>
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
+        
         <div v-else-if="page === 'adminlogin'" class="container mt-5" style="max-width:420px">
         <h3 class="text-center mb-4">Admin Login</h3>
             <div class="card p-4 shadow-sm">
