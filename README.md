@@ -276,7 +276,15 @@ Run the entire stack with one command:
 docker compose up --build
 ```
 
-This starts Flask, Celery worker, Celery beat, and Redis together. Make sure `.env` has the correct values before running.
+This starts Flask, Celery worker, Celery beat, and Redis together.
+
+When using Docker, update these three values in `.env` to use the local Redis container instead of Upstash:
+
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/1
+CACHE_REDIS_URL=redis://redis:6379/2
+
+Make sure all other `.env` values (Clerk, Supabase, Groq, Mail) are filled before running.
 
 ---
 
